@@ -22,9 +22,11 @@ object Tables {
         	likerock boolean,
         	likevegas boolean,
         	likebroadway boolean,
-        	likemusicals boolean);
-         """
+        	likemusicals boolean);"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table users;"
+
   }
 
   case object Venue {
@@ -37,6 +39,9 @@ object Tables {
           venuestate char(2),
           venueseats integer);"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table venue;"
+
   }
 
   case object Category {
@@ -48,6 +53,8 @@ object Tables {
           catname varchar(10),
           catdesc varchar(50));"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table category;"
   }
 
   case object Date {
@@ -63,6 +70,8 @@ object Tables {
           year smallint not null,
           holiday boolean default('N'));"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table date;"
   }
 
   case object Event {
@@ -74,9 +83,10 @@ object Tables {
           catid smallint not null,
           dateid smallint not null sortkey,
           eventname varchar(200),
-          starttime timestamp);
-        """
+          starttime timestamp);"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table event;"
   }
 
   case object Listing {
@@ -90,9 +100,10 @@ object Tables {
           numtickets smallint not null,
           priceperticket decimal(8,2),
           totalprice decimal(8,2),
-          listtime timestamp);
-        """
+          listtime timestamp);"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table listing;"
   }
 
   case object Sales {
@@ -108,9 +119,10 @@ object Tables {
           qtysold smallint not null,
           pricepaid decimal(8,2),
           commission decimal(8,2),
-          saletime timestamp);
-        """
+          saletime timestamp);"""
     }
+
+    def drop(): DBIO[Int] = sqlu"drop table sales;"
   }
 
   def createAll() = DBIO.seq(
@@ -121,5 +133,15 @@ object Tables {
     Event.create(),
     Listing.create(),
     Sales.create()
+  )
+
+  def dropAll() = DBIO.seq(
+    Users.drop(),
+    Venue.drop(),
+    Category.drop(),
+    Date.drop(),
+    Event.drop(),
+    Listing.drop(),
+    Sales.drop()
   )
 }
