@@ -1,7 +1,9 @@
+import com.typesafe.config.ConfigFactory
 import slick.jdbc.PostgresProfile.api._
 
-import scala.concurrent.Await
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.Duration
+import scala.concurrent.{Await, Future}
 
 /**
   * Code example from:
@@ -9,40 +11,43 @@ import scala.concurrent.duration.Duration
   * http://docs.aws.amazon.com/redshift/latest/gsg/rs-gsg-create-sample-db.html
   */
 object CopyCommandExample extends App {
-  case class AwsContext(credentials: String, region: String)
 
-  val db = Database.forConfig("redshift")
-  implicit val awsContext = AwsContext("aws_iam_role=arn:aws:iam::582312427336:role/myRedshiftRole", "us-west-2")
+  implicit val awsContext = AwsContext.fromConfig(ConfigFactory.load())
+  val db = Database.forConfig("slick.redshift")
 
-  try {
+  def dropTables(): Future[Unit] = db.run(Tables.dropAll())
 
+  def createTables(): Future[Unit] = db.run(Tables.createAll())
+
+  def loadSampleData(): Future[Unit] = {
     def buildCopyQuery(tableName: String, dataSource: String, delimiter: String = "|")(implicit awsContext: AwsContext): DBIO[Int] = {
       sqlu"""copy #$tableName from '#$dataSource'
-        credentials '#${awsContext.credentials}'
-        delimiter '#$delimiter' region '#${awsContext.region}';"""
+      credentials 'aws_iam_role=#${awsContext.roleArn}'
+      delimiter '#$delimiter' region '#${awsContext.region}';"""
     }
 
-    val dropTablesResult = db.run(Tables.dropAll())
+    db.run(DBIO.seq(
+      buildCopyQuery("users", "s3://awssampledbuswest2/tickit/allusers_pipe.txt"),
+      buildCopyQuery("venue", "s3://awssampledbuswest2/tickit/venue_pipe.txt"),
+      buildCopyQuery("category", "s3://awssampledbuswest2/tickit/category_pipe.txt"),
+      buildCopyQuery("date", "s3://awssampledbuswest2/tickit/date2008_pipe.txt"),
+      buildCopyQuery("event", "s3://awssampledbuswest2/tickit/allevents_pipe.txt"),
+      buildCopyQuery("listing", "s3://awssampledbuswest2/tickit/listings_pipe.txt"),
+      buildCopyQuery("sales", "s3://awssampledbuswest2/tickit/sales_tab.txt")
+    ))
+  }
 
-    Await.result(dropTablesResult, Duration.Inf)
+  val result: Future[Unit] =
+    for {
+      _ <- dropTables()
+      _ <- createTables()
+      result <- loadSampleData()
+    } yield result
 
-    val createTablesResult = db.run(Tables.createAll())
+  result onComplete {
+    case _ => db.close
+  }
 
-    Await.result(createTablesResult, Duration.Inf)
-
-    val loadSampleDataResult =
-      db.run(DBIO.seq(
-        buildCopyQuery("users", "s3://awssampledbuswest2/tickit/allusers_pipe.txt"),
-        buildCopyQuery("venue", "s3://awssampledbuswest2/tickit/venue_pipe.txt"),
-        buildCopyQuery("category", "s3://awssampledbuswest2/tickit/category_pipe.txt"),
-        buildCopyQuery("date", "s3://awssampledbuswest2/tickit/date2008_pipe.txt"),
-        buildCopyQuery("event", "s3://awssampledbuswest2/tickit/allevents_pipe.txt"),
-        buildCopyQuery("listing", "s3://awssampledbuswest2/tickit/listings_pipe.txt"),
-        buildCopyQuery("sales", "s3://awssampledbuswest2/tickit/sales_tab.txt")
-      ))
-
-    Await.result(loadSampleDataResult, Duration.Inf)
-
-  } finally db.close
+  Await.result(result, Duration.Inf)
 
 }
