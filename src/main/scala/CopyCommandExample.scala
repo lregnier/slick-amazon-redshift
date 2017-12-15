@@ -19,8 +19,12 @@ object CopyCommandExample extends App {
     def buildCopyQuery(tableName: String, dataSource: String, delimiter: String = "|")(implicit awsContext: AwsContext): DBIO[Int] = {
       sqlu"""copy #$tableName from '#$dataSource'
         credentials '#${awsContext.credentials}'
-        delimiter #$delimiter region '#${awsContext.region}';"""
+        delimiter '#$delimiter' region '#${awsContext.region}';"""
     }
+
+    val dropTablesResult = db.run(Tables.dropAll())
+
+    Await.result(dropTablesResult, Duration.Inf)
 
     val createTablesResult = db.run(Tables.createAll())
 
