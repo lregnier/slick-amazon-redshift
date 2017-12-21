@@ -25,7 +25,7 @@ object Tables {
         	likemusicals boolean);"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table users;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists users;"
 
   }
 
@@ -40,7 +40,7 @@ object Tables {
           venueseats integer);"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table venue;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists venue;"
 
   }
 
@@ -54,7 +54,7 @@ object Tables {
           catdesc varchar(50));"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table category;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists category;"
   }
 
   case object Date {
@@ -71,7 +71,7 @@ object Tables {
           holiday boolean default('N'));"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table date;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists date;"
   }
 
   case object Event {
@@ -86,7 +86,7 @@ object Tables {
           starttime timestamp);"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table event;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists event;"
   }
 
   case object Listing {
@@ -103,7 +103,7 @@ object Tables {
           listtime timestamp);"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table listing;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists listing;"
   }
 
   case object Sales {
@@ -122,7 +122,7 @@ object Tables {
           saletime timestamp);"""
     }
 
-    def drop(): DBIO[Int] = sqlu"drop table sales;"
+    def drop(): DBIO[Int] = sqlu"drop table if exists sales;"
   }
 
   def createAll() = DBIO.seq(
